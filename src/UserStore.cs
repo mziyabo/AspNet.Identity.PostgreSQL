@@ -27,8 +27,10 @@ namespace AspNet.Identity.PostgreSQL
         private UserLoginsTable userLoginsTable;
         public PostgreSQLDatabase Database { get; private set; }
 
-        public IQueryable<TUser> Users {
-            get {
+        public IQueryable<TUser> Users
+        {
+            get
+            {
                 //ToDo: Best performance
                 return userTable.GetAllUsers().AsQueryable();
                 //throw new NotImplementedException();
@@ -38,7 +40,8 @@ namespace AspNet.Identity.PostgreSQL
         /// <summary>
         /// Default constructor that initializes a new PostgreSQLDatabase instance using the Default Connection string.
         /// </summary>
-        public UserStore() {
+        public UserStore()
+        {
             new UserStore<TUser>(new PostgreSQLDatabase());
         }
 
@@ -46,7 +49,8 @@ namespace AspNet.Identity.PostgreSQL
         /// Constructor that takes a PostgreSQLDatabase as argument.
         /// </summary>
         /// <param name="database"></param>
-        public UserStore(PostgreSQLDatabase database) {
+        public UserStore(PostgreSQLDatabase database)
+        {
             Database = database;
             userTable = new UserTable<TUser>(database);
             roleTable = new RoleTable(database);
@@ -60,8 +64,10 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task CreateAsync(TUser user) {
-            if (user == null) {
+        public Task CreateAsync(TUser user)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
@@ -75,13 +81,16 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="userId">The user's Id.</param>
         /// <returns></returns>
-        public Task<TUser> FindByIdAsync(string userId) {
-            if (string.IsNullOrEmpty(userId)) {
+        public Task<TUser> FindByIdAsync(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
                 throw new ArgumentException("Null or empty argument: userId");
             }
 
             TUser result = userTable.GetUserById(userId) as TUser;
-            if (result != null) {
+            if (result != null)
+            {
                 return Task.FromResult<TUser>(result);
             }
 
@@ -93,17 +102,23 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="userName">The user's name.</param>
         /// <returns></returns>
-        public Task<TUser> FindByNameAsync(string userName) {
-            if (string.IsNullOrEmpty(userName)) {
+        public Task<TUser> FindByNameAsync(string userName)
+        {
+            if (string.IsNullOrEmpty(userName))
+            {
                 throw new ArgumentException("Null or empty argument: userName");
             }
 
             List<TUser> result = userTable.GetUserByName(userName) as List<TUser>;
 
-            if (result != null) {
-                if (result.Count == 1) {
+            if (result != null)
+            {
+                if (result.Count == 1)
+                {
                     return Task.FromResult<TUser>(result[0]);
-                } else if (result.Count > 1) {
+                }
+                else if (result.Count > 1)
+                {
                     //todo: exception for release mode?
 #if DEBUG
                     throw new ArgumentException("More than one user record returned.");
@@ -119,8 +134,10 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user">TUser to be updated.</param>
         /// <returns></returns>
-        public Task UpdateAsync(TUser user) {
-            if (user == null) {
+        public Task UpdateAsync(TUser user)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
@@ -129,14 +146,18 @@ namespace AspNet.Identity.PostgreSQL
             return Task.FromResult<object>(null);
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(Boolean disposing) {
-            if (disposing) {
-                if (Database != null) {
+        protected virtual void Dispose(Boolean disposing)
+        {
+            if (disposing)
+            {
+                if (Database != null)
+                {
                     Database.Dispose();
                     Database = null;
                 }
@@ -149,12 +170,15 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">User to have claim added.</param>
         /// <param name="claim">Claim to be added.</param>
         /// <returns></returns>
-        public Task AddClaimAsync(TUser user, Claim claim) {
-            if (user == null) {
+        public Task AddClaimAsync(TUser user, Claim claim)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (claim == null) {
+            if (claim == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
@@ -168,7 +192,8 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task<IList<Claim>> GetClaimsAsync(TUser user) {
+        public Task<IList<Claim>> GetClaimsAsync(TUser user)
+        {
             ClaimsIdentity identity = userClaimsTable.FindByUserId(user.Id);
 
             return Task.FromResult<IList<Claim>>(identity.Claims.ToList());
@@ -180,12 +205,15 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">User to have claim removed.</param>
         /// <param name="claim">Claim to be removed.</param>
         /// <returns></returns>
-        public Task RemoveClaimAsync(TUser user, Claim claim) {
-            if (user == null) {
+        public Task RemoveClaimAsync(TUser user, Claim claim)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (claim == null) {
+            if (claim == null)
+            {
                 throw new ArgumentNullException(nameof(claim));
             }
 
@@ -200,12 +228,15 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">User to have login added.</param>
         /// <param name="login">Login to be added.</param>
         /// <returns></returns>
-        public Task AddLoginAsync(TUser user, UserLoginInfo login) {
-            if (user == null) {
+        public Task AddLoginAsync(TUser user, UserLoginInfo login)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (login == null) {
+            if (login == null)
+            {
                 throw new ArgumentNullException(nameof(login));
             }
 
@@ -219,15 +250,19 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="login"></param>
         /// <returns></returns>
-        public Task<TUser> FindAsync(UserLoginInfo login) {
-            if (login == null) {
+        public Task<TUser> FindAsync(UserLoginInfo login)
+        {
+            if (login == null)
+            {
                 throw new ArgumentNullException(nameof(login));
             }
 
             var userId = userLoginsTable.FindUserIdByLogin(login);
-            if (userId != null) {
+            if (userId != null)
+            {
                 TUser user = userTable.GetUserById(userId) as TUser;
-                if (user != null) {
+                if (user != null)
+                {
                     return Task.FromResult<TUser>(user);
                 }
             }
@@ -240,14 +275,17 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user) {
+        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user)
+        {
             List<UserLoginInfo> userLogins = new List<UserLoginInfo>();
-            if (user == null) {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
             List<UserLoginInfo> logins = userLoginsTable.FindByUserId(user.Id);
-            if (logins != null) {
+            if (logins != null)
+            {
                 return Task.FromResult<IList<UserLoginInfo>>(logins);
             }
 
@@ -260,12 +298,15 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">User to have login removed.</param>
         /// <param name="login">Login to be removed.</param>
         /// <returns></returns>
-        public Task RemoveLoginAsync(TUser user, UserLoginInfo login) {
-            if (user == null) {
+        public Task RemoveLoginAsync(TUser user, UserLoginInfo login)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (login == null) {
+            if (login == null)
+            {
                 throw new ArgumentNullException(nameof(login));
             }
 
@@ -280,17 +321,21 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">User to have role added.</param>
         /// <param name="roleName">Name of the role to be added to user.</param>
         /// <returns></returns>
-        public Task AddToRoleAsync(TUser user, string roleName) {
-            if (user == null) {
+        public Task AddToRoleAsync(TUser user, string roleName)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (string.IsNullOrEmpty(roleName)) {
+            if (string.IsNullOrEmpty(roleName))
+            {
                 throw new ArgumentException("Argument cannot be null or empty: roleName.");
             }
 
             string roleId = roleTable.GetRoleId(roleName);
-            if (!string.IsNullOrEmpty(roleId)) {
+            if (!string.IsNullOrEmpty(roleId))
+            {
                 userRolesTable.Insert(user, roleId);
             }
 
@@ -302,14 +347,17 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user">TUser object.</param>
         /// <returns></returns>
-        public Task<IList<string>> GetRolesAsync(TUser user) {
-            if (user == null) {
+        public Task<IList<string>> GetRolesAsync(TUser user)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
             List<string> roles = userRolesTable.FindByUserId(user.Id);
             {
-                if (roles != null) {
+                if (roles != null)
+                {
                     return Task.FromResult<IList<string>>(roles);
                 }
             }
@@ -323,18 +371,22 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">TUser object.</param>
         /// <param name="role">Role string.</param>
         /// <returns></returns>
-        public Task<bool> IsInRoleAsync(TUser user, string role) {
-            if (user == null) {
+        public Task<bool> IsInRoleAsync(TUser user, string role)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (string.IsNullOrEmpty(role)) {
+            if (string.IsNullOrEmpty(role))
+            {
                 throw new ArgumentNullException(nameof(role));
             }
 
             List<string> roles = userRolesTable.FindByUserId(user.Id);
             {
-                if (roles != null && roles.Contains(role)) {
+                if (roles != null && roles.Contains(role))
+                {
                     return Task.FromResult<bool>(true);
                 }
             }
@@ -350,17 +402,21 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user">TUser object.</param>
         /// <param name="role">Role string.</param>
         /// <returns></returns>
-        public Task RemoveFromRoleAsync(TUser user, string role) {
-            if (user == null) {
+        public Task RemoveFromRoleAsync(TUser user, string role)
+        {
+            if (user == null)
+            {
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (role == null) {
+            if (role == null)
+            {
                 throw new ArgumentNullException(nameof(role));
             }
 
             string roleId = roleTable.GetRoleId(role);
-            if (!string.IsNullOrEmpty(roleId)) {
+            if (!string.IsNullOrEmpty(roleId))
+            {
                 userRolesTable.Delete(user.Id, roleId);
             }
 
@@ -372,8 +428,10 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user">TUser object.</param>
         /// <returns></returns>
-        public Task DeleteAsync(TUser user) {
-            if (user != null) {
+        public Task DeleteAsync(TUser user)
+        {
+            if (user != null)
+            {
                 userTable.Delete(user);
             }
 
@@ -385,7 +443,8 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user">TUser object.</param>
         /// <returns></returns>
-        public Task<string> GetPasswordHashAsync(TUser user) {
+        public Task<string> GetPasswordHashAsync(TUser user)
+        {
             string passwordHash = userTable.GetPasswordHash(user.Id);
 
             return Task.FromResult<string>(passwordHash);
@@ -396,7 +455,8 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task<bool> HasPasswordAsync(TUser user) {
+        public Task<bool> HasPasswordAsync(TUser user)
+        {
             var hasPassword = !string.IsNullOrEmpty(userTable.GetPasswordHash(user.Id));
 
             return Task.FromResult<bool>(Boolean.Parse(hasPassword.ToString()));
@@ -408,7 +468,8 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user"></param>
         /// <param name="passwordHash"></param>
         /// <returns></returns>
-        public Task SetPasswordHashAsync(TUser user, string passwordHash) {
+        public Task SetPasswordHashAsync(TUser user, string passwordHash)
+        {
             user.PasswordHash = passwordHash;
 
             return Task.FromResult<Object>(null);
@@ -420,7 +481,8 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user"></param>
         /// <param name="stamp"></param>
         /// <returns></returns>
-        public Task SetSecurityStampAsync(TUser user, string stamp) {
+        public Task SetSecurityStampAsync(TUser user, string stamp)
+        {
             user.SecurityStamp = stamp;
 
             return Task.FromResult(0);
@@ -431,7 +493,8 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task<string> GetSecurityStampAsync(TUser user) {
+        public Task<string> GetSecurityStampAsync(TUser user)
+        {
             return Task.FromResult(user.SecurityStamp);
         }
 
@@ -441,7 +504,8 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user"></param>
         /// <param name="email"></param>
         /// <returns></returns>
-        public Task SetEmailAsync(TUser user, string email) {
+        public Task SetEmailAsync(TUser user, string email)
+        {
             user.Email = email;
             userTable.Update(user);
 
@@ -453,7 +517,8 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task<string> GetEmailAsync(TUser user) {
+        public Task<string> GetEmailAsync(TUser user)
+        {
             return Task.FromResult(user.Email);
         }
 
@@ -462,7 +527,8 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public Task<bool> GetEmailConfirmedAsync(TUser user) {
+        public Task<bool> GetEmailConfirmedAsync(TUser user)
+        {
             return Task.FromResult(user.EmailConfirmed);
         }
 
@@ -472,7 +538,8 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="user"></param>
         /// <param name="confirmed"></param>
         /// <returns></returns>
-        public Task SetEmailConfirmedAsync(TUser user, bool confirmed) {
+        public Task SetEmailConfirmedAsync(TUser user, bool confirmed)
+        {
             user.EmailConfirmed = confirmed;
             userTable.Update(user);
 
@@ -484,13 +551,16 @@ namespace AspNet.Identity.PostgreSQL
         /// </summary>
         /// <param name="email"></param>
         /// <returns></returns>
-        public Task<TUser> FindByEmailAsync(string email) {
-            if (String.IsNullOrEmpty(email)) {
+        public Task<TUser> FindByEmailAsync(string email)
+        {
+            if (String.IsNullOrEmpty(email))
+            {
                 throw new ArgumentNullException(nameof(email));
             }
 
             List<TUser> result = userTable.GetUserByEmail(email) as List<TUser>;
-            if (result != null && result.Count > 0) {
+            if (result != null && result.Count > 0)
+            {
                 return Task.FromResult<TUser>(result[0]);
             }
 

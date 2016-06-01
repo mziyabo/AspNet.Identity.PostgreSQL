@@ -7,3 +7,11 @@ E:\Development\GitHub\AspNet.Identity.PostgreSQL\src\bin\Debug\AspNet.Identity.P
 E:\Development\GitHub\AspNet.Identity.PostgreSQL\src\obj\Debug\AspNet.Identity.PostgreSQL.csprojResolveAssemblyReference.cache
 E:\Development\GitHub\AspNet.Identity.PostgreSQL\src\obj\Debug\AspNet.Identity.PostgreSQL.dll
 E:\Development\GitHub\AspNet.Identity.PostgreSQL\src\obj\Debug\AspNet.Identity.PostgreSQL.pdb
+D:\Source\AspNet.Identity.PostgreSQL\src\bin\Debug\AspNet.Identity.PostgreSQL.dll
+D:\Source\AspNet.Identity.PostgreSQL\src\bin\Debug\AspNet.Identity.PostgreSQL.pdb
+D:\Source\AspNet.Identity.PostgreSQL\src\bin\Debug\Microsoft.AspNet.Identity.Core.dll
+D:\Source\AspNet.Identity.PostgreSQL\src\bin\Debug\Npgsql.dll
+D:\Source\AspNet.Identity.PostgreSQL\src\bin\Debug\Microsoft.AspNet.Identity.Core.xml
+D:\Source\AspNet.Identity.PostgreSQL\src\bin\Debug\Npgsql.xml
+D:\Source\AspNet.Identity.PostgreSQL\src\obj\Debug\AspNet.Identity.PostgreSQL.dll
+D:\Source\AspNet.Identity.PostgreSQL\src\obj\Debug\AspNet.Identity.PostgreSQL.pdb

@@ -62,7 +62,9 @@
     <Compile Include="UserTable.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="PostgreSQLIdentity.sql" />
