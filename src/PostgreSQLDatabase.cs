@@ -1,9 +1,9 @@
-﻿using Npgsql;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Threading;
+using Npgsql;
 
 namespace AspNet.Identity.PostgreSQL
 {
@@ -14,19 +14,18 @@ namespace AspNet.Identity.PostgreSQL
     {
         private NpgsqlConnection _connection;
 
+        /// <summary>
         /// Default constructor which uses the "DefaultConnection" connectionString, often located in web.config.
         /// </summary>
         public PostgreSQLDatabase()
-            : this("DefaultConnection")
-        {
+                : this("DefaultConnection") {
         }
 
         /// <summary>
         /// Constructor which takes the connection string name.
         /// </summary>
         /// <param name="connectionStringName">The name of the connection string.</param>
-        public PostgreSQLDatabase(string connectionStringName)
-        {
+        public PostgreSQLDatabase(string connectionStringName) {
             string connectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
             _connection = new NpgsqlConnection(connectionString);
         }
@@ -37,23 +36,19 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="commandText">The PostgreSQL query to execute.</param>
         /// <param name="parameters">Optional parameters to pass to the query.</param>
         /// <returns>The count of records affected by the PostgreSQL statement.</returns>
-        public int Execute(string commandText, Dictionary<string, object> parameters)
-        {
+        public int Execute(string commandText, Dictionary<string, object> parameters) {
             int result = 0;
 
-            if (String.IsNullOrEmpty(commandText))
-            {
+            if (String.IsNullOrEmpty(commandText)) {
                 throw new ArgumentException("Command text cannot be null or empty.");
             }
 
-            try
-            {
+            try {
                 OpenConnection();
                 var command = CreateCommand(commandText, parameters);
                 result = command.ExecuteNonQuery();
             }
-            finally
-            {
+            finally {
                 _connection.Close();
             }
 
@@ -66,23 +61,19 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="commandText">The PostgreSQL query to execute.</param>
         /// <param name="parameters">Optional parameters to pass to the query.</param>
         /// <returns></returns>
-        public object QueryValue(string commandText, Dictionary<string, object> parameters)
-        {
+        public object QueryValue(string commandText, Dictionary<string, object> parameters) {
             object result = null;
 
-            if (String.IsNullOrEmpty(commandText))
-            {
+            if (String.IsNullOrEmpty(commandText)) {
                 throw new ArgumentException("Command text cannot be null or empty.");
             }
 
-            try
-            {
+            try {
                 OpenConnection();
                 var command = CreateCommand(commandText, parameters);
                 result = command.ExecuteScalar();
             }
-            finally
-            {
+            finally {
                 CloseConnection();
             }
 
@@ -95,26 +86,20 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="commandText">The PostgreSQL query to execute.</param>
         /// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
         /// <returns>A list of a Dictionary of Key, values pairs representing the ColumnName and corresponding value.</returns>
-        public List<Dictionary<string, string>> Query(string commandText, Dictionary<string, object> parameters)
-        {
+        public List<Dictionary<string, string>> Query(string commandText, Dictionary<string, object> parameters) {
             List<Dictionary<string, string>> rows = null;
-            if (String.IsNullOrEmpty(commandText))
-            {
+            if (String.IsNullOrEmpty(commandText)) {
                 throw new ArgumentException("Command text cannot be null or empty.");
             }
 
-            try
-            {
+            try {
                 OpenConnection();
                 var command = CreateCommand(commandText, parameters);
-                using (NpgsqlDataReader reader = command.ExecuteReader())
-                {
+                using (NpgsqlDataReader reader = command.ExecuteReader()) {
                     rows = new List<Dictionary<string, string>>();
-                    while (reader.Read())
-                    {
+                    while (reader.Read()) {
                         var row = new Dictionary<string, string>();
-                        for (var i = 0; i < reader.FieldCount; i++)
-                        {
+                        for (var i = 0; i < reader.FieldCount; i++) {
                             var columnName = reader.GetName(i);
                             var columnValue = reader.IsDBNull(i) ? null : reader.GetValue(i).ToString();
                             row.Add(columnName, columnValue);
@@ -123,8 +108,7 @@ namespace AspNet.Identity.PostgreSQL
                     }
                 }
             }
-            finally
-            {
+            finally {
                 CloseConnection();
             }
 
@@ -137,8 +121,7 @@ namespace AspNet.Identity.PostgreSQL
         /// <param name="commandText">The PostgreSQL query to execute.</param>
         /// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
         /// <returns></returns>
-        private NpgsqlCommand CreateCommand(string commandText, Dictionary<string, object> parameters)
-        {
+        private NpgsqlCommand CreateCommand(string commandText, Dictionary<string, object> parameters) {
             NpgsqlCommand command = _connection.CreateCommand();
             command.CommandText = commandText;
             AddParameters(command, parameters);
@@ -149,17 +132,14 @@ namespace AspNet.Identity.PostgreSQL
         /// <summary>
         /// Adds the parameters to a PostgreSQL command.
         /// </summary>
-        /// <param name="commandText">The PostgreSQL query to execute.</param>
+        /// <param name="command">The NpgsqlCommand command to execute.</param>
         /// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
-        private static void AddParameters(NpgsqlCommand command, Dictionary<string, object> parameters)
-        {
-            if (parameters == null)
-            {
+        private static void AddParameters(NpgsqlCommand command, Dictionary<string, object> parameters) {
+            if (parameters == null) {
                 return;
             }
 
-            foreach (var param in parameters)
-            {
+            foreach (var param in parameters) {
                 var parameter = command.CreateParameter();
                 parameter.ParameterName = param.Key;
                 parameter.Value = param.Value ?? DBNull.Value;
@@ -168,13 +148,12 @@ namespace AspNet.Identity.PostgreSQL
         }
 
         /// <summary>
-        /// Helper method to return query a string value. 
+        /// Helper method to return query a string value.
         /// </summary>
         /// <param name="commandText">The PostgreSQL query to execute.</param>
         /// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
         /// <returns>The string value resulting from the query.</returns>
-        public string GetStrValue(string commandText, Dictionary<string, object> parameters)
-        {
+        public string GetStrValue(string commandText, Dictionary<string, object> parameters) {
             string value = QueryValue(commandText, parameters) as string;
             return value;
         }
@@ -182,17 +161,12 @@ namespace AspNet.Identity.PostgreSQL
         /// <summary>
         /// Opens a connection if not open.
         /// </summary>
-        private void OpenConnection()
-        {
+        private void OpenConnection() {
             var retries = 10;
-            if (_connection.State == ConnectionState.Open)
-            {
+            if (_connection.State == ConnectionState.Open) {
                 return;
-            }
-            else
-            {
-                while (retries >= 0 && _connection.State != ConnectionState.Open)
-                {
+            } else {
+                while (retries >= 0 && _connection.State != ConnectionState.Open) {
                     _connection.Open();
                     retries--;
                     Thread.Sleep(50);
@@ -203,20 +177,23 @@ namespace AspNet.Identity.PostgreSQL
         /// <summary>
         /// Closes the connection if it is open.
         /// </summary>
-        public void CloseConnection()
-        {
-            if (_connection.State == ConnectionState.Open)
-            {
+        public void CloseConnection() {
+            if (_connection.State == ConnectionState.Open) {
                 _connection.Close();
             }
         }
 
-        public void Dispose()
-        {
-            if (_connection != null)
-            {
-                _connection.Dispose();
-                _connection = null;
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(Boolean disposing) {
+            if (disposing) {
+                if (_connection != null) {
+                    _connection.Dispose();
+                    _connection = null;
+                }
             }
         }
     }

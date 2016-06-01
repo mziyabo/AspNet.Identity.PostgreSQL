@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNet.Identity;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNet.Identity;
 
 namespace AspNet.Identity.PostgreSQL
 {
@@ -9,44 +9,37 @@ namespace AspNet.Identity.PostgreSQL
     /// Class that implements the key ASP.NET Identity role store iterfaces.
     /// </summary>
     public class RoleStore<TRole> : IQueryableRoleStore<TRole>
-        where TRole : IdentityRole
+            where TRole : IdentityRole
     {
         private RoleTable roleTable;
         public PostgreSQLDatabase Database { get; private set; }
 
-        public IQueryable<TRole> Roles
-        {
-            get
-            {
-                var result = roleTable.GetAllRoleNames() as System.Collections.Generic.List<TRole>;                
+        public IQueryable<TRole> Roles {
+            get {
+                var result = roleTable.GetAllRoleNames() as System.Collections.Generic.List<TRole>;
                 return result.AsQueryable();
             }
         }
 
-
         /// <summary>
         /// Default constructor that initializes a new PostgreSQLDatabase instance using the Default Connection string.
         /// </summary>
-        public RoleStore()
-        {
-            new RoleStore<TRole>(new PostgreSQLDatabase());
+        public RoleStore() :
+            this(new PostgreSQLDatabase()) {
         }
 
         /// <summary>
         /// Constructor that takes a PostgreSQLDatabase as argument.
         /// </summary>
         /// <param name="database"></param>
-        public RoleStore(PostgreSQLDatabase database)
-        {
+        public RoleStore(PostgreSQLDatabase database) {
             this.Database = database;
             this.roleTable = new RoleTable(database);
         }
 
-        public Task CreateAsync(TRole role)
-        {
-            if (role == null)
-            {
-                throw new ArgumentNullException("role");
+        public Task CreateAsync(TRole role) {
+            if (role == null) {
+                throw new ArgumentNullException(nameof(role));
             }
 
             roleTable.Insert(role);
@@ -54,11 +47,9 @@ namespace AspNet.Identity.PostgreSQL
             return Task.FromResult<object>(null);
         }
 
-        public Task DeleteAsync(TRole role)
-        {
-            if (role == null)
-            {
-                throw new ArgumentNullException("user");
+        public Task DeleteAsync(TRole role) {
+            if (role == null) {
+                throw new ArgumentNullException(nameof(role));
             }
 
             roleTable.Delete(role.Id);
@@ -66,25 +57,22 @@ namespace AspNet.Identity.PostgreSQL
             return Task.FromResult<Object>(null);
         }
 
-        public Task<TRole> FindByIdAsync(string roleId)
-        {
+        public Task<TRole> FindByIdAsync(string roleId) {
             TRole result = roleTable.GetRoleById(roleId) as TRole;
 
             return Task.FromResult<TRole>(result);
         }
 
-        public Task<TRole> FindByNameAsync(string roleName)
-        {
-            TRole result = roleTable.GetRoleByName(roleName) as TRole;
+        public Task<TRole> FindByNameAsync(string roleName) {
+            var role = roleTable.GetRoleByName(roleName);
+            TRole result = role as TRole;
 
             return Task.FromResult<TRole>(result);
         }
 
-        public Task UpdateAsync(TRole role)
-        {
-            if (role == null)
-            {
-                throw new ArgumentNullException("user");
+        public Task UpdateAsync(TRole role) {
+            if (role == null) {
+                throw new ArgumentNullException(nameof(role));
             }
 
             roleTable.Update(role);
@@ -92,14 +80,18 @@ namespace AspNet.Identity.PostgreSQL
             return Task.FromResult<Object>(null);
         }
 
-        public void Dispose()
-        {
-            if (Database != null)
-            {
-                Database.Dispose();
-                Database = null;
-            }
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
+        protected virtual void Dispose(Boolean disposing) {
+            if (disposing) {
+                if (Database != null) {
+                    Database.Dispose();
+                    Database = null;
+                }
+            }
+        }
     }
 }
