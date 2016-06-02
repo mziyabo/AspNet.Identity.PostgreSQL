@@ -1,113 +1,105 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 
 namespace AspNet.Identity.PostgreSQL
 {
-    /// <summary>
-    /// Class that implements the key ASP.NET Identity role store iterfaces.
-    /// </summary>
-    public class RoleStore<TRole> : IQueryableRoleStore<TRole>
-            where TRole : IdentityRole
-    {
-        private RoleTable roleTable;
-        public PostgreSQLDatabase Database { get; private set; }
+	/// <summary>
+	/// Class that implements the key ASP.NET Identity role store interfaces.
+	/// </summary>
+	public class RoleStore : IRoleStore<IdentityRole>, IQueryableRoleStore<IdentityRole>
+	{
+		private RoleTable _roleTable;
+		private SqlDatabase _database;
 
-        public IQueryable<TRole> Roles
-        {
-            get
-            {
-                var result = roleTable.GetAllRoleNames() as System.Collections.Generic.List<TRole>;
-                return result.AsQueryable();
-            }
-        }
+		/// <summary>
+		/// Constructor that takes a PostgreSQLDatabase as argument.
+		/// </summary>
+		/// <param name="connection"></param>
+		public RoleStore(IDbConnection connection)
+		{
+			_database = new SqlDatabase(connection);
+			_roleTable = new RoleTable(_database);
+		}
 
-        /// <summary>
-        /// Default constructor that initializes a new PostgreSQLDatabase instance using the Default Connection string.
-        /// </summary>
-        public RoleStore() :
-            this(new PostgreSQLDatabase())
-        {
-        }
+		public IQueryable<IdentityRole> Roles
+		{
+			get
+			{
+				var result = _roleTable.GetAllRoleNames() as System.Collections.Generic.List<IdentityRole>;
+				return result.AsQueryable();
+			}
+		}
 
-        /// <summary>
-        /// Constructor that takes a PostgreSQLDatabase as argument.
-        /// </summary>
-        /// <param name="database"></param>
-        public RoleStore(PostgreSQLDatabase database)
-        {
-            this.Database = database;
-            this.roleTable = new RoleTable(database);
-        }
+		public Task CreateAsync(IdentityRole role)
+		{
+			if (role == null)
+			{
+				throw new ArgumentNullException(nameof(role));
+			}
 
-        public Task CreateAsync(TRole role)
-        {
-            if (role == null)
-            {
-                throw new ArgumentNullException(nameof(role));
-            }
+			_roleTable.Insert(role);
 
-            roleTable.Insert(role);
+			return Task.FromResult<Object>(null);
+		}
 
-            return Task.FromResult<object>(null);
-        }
+		public Task DeleteAsync(IdentityRole role)
+		{
+			if (role == null)
+			{
+				throw new ArgumentNullException(nameof(role));
+			}
 
-        public Task DeleteAsync(TRole role)
-        {
-            if (role == null)
-            {
-                throw new ArgumentNullException(nameof(role));
-            }
+			_roleTable.Delete(role.Id);
 
-            roleTable.Delete(role.Id);
+			return Task.FromResult<Object>(null);
+		}
 
-            return Task.FromResult<Object>(null);
-        }
+		public Task<IdentityRole> FindByIdAsync(String roleId)
+		{
+			IdentityRole result = _roleTable.GetRoleById(roleId) as IdentityRole;
 
-        public Task<TRole> FindByIdAsync(string roleId)
-        {
-            TRole result = roleTable.GetRoleById(roleId) as TRole;
+			return Task.FromResult<IdentityRole>(result);
+		}
 
-            return Task.FromResult<TRole>(result);
-        }
+		public Task<IdentityRole> FindByNameAsync(String roleName)
+		{
+			var role = _roleTable.GetRoleByName(roleName);
+			IdentityRole result = role as IdentityRole;
 
-        public Task<TRole> FindByNameAsync(string roleName)
-        {
-            var role = roleTable.GetRoleByName(roleName);
-            TRole result = role as TRole;
+			return Task.FromResult<IdentityRole>(result);
+		}
 
-            return Task.FromResult<TRole>(result);
-        }
+		public Task UpdateAsync(IdentityRole role)
+		{
+			if (role == null)
+			{
+				throw new ArgumentNullException(nameof(role));
+			}
 
-        public Task UpdateAsync(TRole role)
-        {
-            if (role == null)
-            {
-                throw new ArgumentNullException(nameof(role));
-            }
+			_roleTable.Update(role);
 
-            roleTable.Update(role);
+			return Task.FromResult<Object>(null);
+		}
 
-            return Task.FromResult<Object>(null);
-        }
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(Boolean disposing)
-        {
-            if (disposing)
-            {
-                if (Database != null)
-                {
-                    Database.Dispose();
-                    Database = null;
-                }
-            }
-        }
-    }
+		protected virtual void Dispose(Boolean disposing)
+		{
+			if (disposing)
+			{
+				if (_database != null)
+				{
+					_database.Dispose();
+					_database = null;
+				}
+			}
+		}
+	}
 }

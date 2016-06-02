@@ -21,7 +21,7 @@ namespace AspNet.Identity.PostgreSQL
         /// Constructor that takes user name as argument.
         /// </summary>
         /// <param name="userName"></param>
-        public IdentityUser(string userName)
+        public IdentityUser(String userName)
                 : this()
         {
             UserName = userName;
@@ -30,17 +30,17 @@ namespace AspNet.Identity.PostgreSQL
         /// <summary>
         /// User ID.
         /// </summary>
-        public string Id { get; set; }
+        public String Id { get; set; }
 
         /// <summary>
         /// User's name.
         /// </summary>
-        public string UserName { get; set; }
+        public String UserName { get; set; }
 
         /// <summary>
         /// Email.
         /// </summary>
-        public virtual string Email { get; set; }
+        public virtual String Email { get; set; }
 
         /// <summary>
         /// True if the email is confirmed, default is false.
@@ -50,12 +50,12 @@ namespace AspNet.Identity.PostgreSQL
         /// <summary>
         /// The salted/hashed form of the user password.
         /// </summary>
-        public virtual string PasswordHash { get; set; }
+        public virtual String PasswordHash { get; set; }
 
         /// <summary>
         /// A random value that should change whenever a users credentials have changed (password changed, login removed).
         /// </summary>
-        public virtual string SecurityStamp { get; set; }
+        public virtual String SecurityStamp { get; set; }
 
         /// <summary>
         ///

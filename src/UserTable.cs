@@ -3,290 +3,305 @@ using System.Collections.Generic;
 
 namespace AspNet.Identity.PostgreSQL
 {
-    /// <summary>
-    /// Class that represents the AspNetUsers table in the PostgreSQL database.
-    /// </summary>
-    public class UserTable<TUser>
-        where TUser :IdentityUser
-    {
-        private PostgreSQLDatabase _database;
+	/// <summary>
+	/// Class that represents the AspNetUsers table in the PostgreSQL database.
+	/// </summary>
+	internal class UserTable<TUser>
+			where TUser : IdentityUser, new()
+	{
+		private SqlDatabase _database;
 
-        /// <summary>
-        /// Constructor that takes a PostgreSQL database instance. 
-        /// </summary>
-        /// <param name="database"></param>
-        public UserTable(PostgreSQLDatabase database)
-        {
-            _database = database;
-        }
+		/// <summary>
+		/// Constructor that takes a PostgreSQL database instance.
+		/// </summary>
+		/// <param name="database"></param>
+		public UserTable(SqlDatabase database)
+		{
+			_database = database;
+		}
 
-        /// <summary>
-        /// Gets the user's name, provided with an ID.
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public string GetUserName(string userId)
-        {
-            string commandText = "SELECT \"UserName\" FROM \"AspNetUsers\" WHERE \"Id\" = @id";
-            Dictionary<string, object> parameters = new Dictionary<string, object>() { { "@id", userId } };
+		/// <summary>
+		/// Gets the user's name, provided with an ID.
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <returns></returns>
+		public String GetUserName(String userId)
+		{
+			var commandText = "SELECT \"UserName\" FROM \"AspNetUsers\" WHERE \"Id\" = @id";
+			var parameters = new Dictionary<String, Object>() { { "@id", userId } };
+			return _database.GetStrValue(commandText, parameters);
+		}
 
-            return _database.GetStrValue(commandText, parameters);
-        }
+		/// <summary>
+		/// Gets the user's ID, provided with a user name.
+		/// </summary>
+		/// <param name="userName"></param>
+		/// <returns></returns>
+		public String GetUserId(String userName)
+		{
+			if (String.IsNullOrWhiteSpace(userName))
+				throw new ArgumentNullException(nameof(userName));
 
-        /// <summary>
-        /// Gets the user's ID, provided with a user name.
-        /// </summary>
-        /// <param name="userName"></param>
-        /// <returns></returns>
-        public string GetUserId(string userName)
-        {
-            //Due to PostgreSQL's case sensitivity, we have another column for the user name in lowercase.
-            if (userName != null)
-                userName = userName.ToLower();
+			//Due to PostgreSQL's case sensitivity, we have another column for the user name in lowercase.
+			userName = userName.ToLower();
 
-            string commandText = "SELECT \"Id\" FROM \"AspNetUsers\" WHERE LOWER(\"UserName\") = @name";
-            Dictionary<string, object> parameters = new Dictionary<string, object>() { { "@name", userName } };
+			var commandText = "SELECT \"Id\" FROM \"AspNetUsers\" WHERE LOWER(\"UserName\") = @name";
+			var parameters = new Dictionary<String, Object>() { { "@name", userName } };
 
-            return _database.GetStrValue(commandText, parameters);
-        }
+			return _database.GetStrValue(commandText, parameters);
+		}
 
-        /// <summary>
-        /// Returns all users. Created by: Slawomir Figiel
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        /// 
-        public List<TUser> GetAllUsers()
-        {
-            List<TUser> users = new List<TUser>();
+		/// <summary>
+		/// Returns all users.
+		/// </summary>
+		/// <returns></returns>
+		public IEnumerable<TUser> GetAllUsers()
+		{
+			var users = new List<TUser>();
+			var commandText = "SELECT * FROM \"AspNetUsers\"";
+			var rows = _database.Query(commandText, new Dictionary<String, Object>());
 
-            string commandText = "SELECT * FROM \"AspNetUsers\"";
-            var rows = _database.Query(commandText, new Dictionary<string, object>());
+			foreach (var row in rows)
+			{
+				TUser user = new TUser();
+				user.Id = row["Id"];
+				user.UserName = row["UserName"];
+				user.PasswordHash = String.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
+				user.SecurityStamp = String.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
+				user.Email = String.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
+				user.EmailConfirmed = row["EmailConfirmed"] == "True";
+				users.Add(user);
+			}
 
-            foreach (var row in rows)
-            {
-                TUser user = (TUser)Activator.CreateInstance(typeof(TUser));
-                user.Id = row["Id"];
-                user.UserName = row["UserName"];
-                user.PasswordHash = string.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
-                user.SecurityStamp = string.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
-                user.Email = string.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
-                user.EmailConfirmed = row["EmailConfirmed"] == "True";
-                users.Add(user);
-            }
+			return users;
+		}
 
-            return users;
-        }
+		public TUser GetUserById(String userId)
+		{
+			TUser user = null;
+			var commandText = "SELECT * FROM \"AspNetUsers\" WHERE \"Id\" = @id";
+			var parameters = new Dictionary<String, Object>() { { "@id", userId } };
 
-        public TUser GetUserById(string userId)
-        {
-            TUser user = null;
-            string commandText = "SELECT * FROM \"AspNetUsers\" WHERE \"Id\" = @id";
-            Dictionary<string, object> parameters = new Dictionary<string, object>() { { "@id", userId } };
+			var rows = _database.Query(commandText, parameters);
+			if (rows != null && rows.Count == 1)
+			{
+				var row = rows[0];
+				user = new TUser();
+				user.Id = row["Id"];
+				user.UserName = row["UserName"];
+				user.PasswordHash = String.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
+				user.SecurityStamp = String.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
+				user.Email = String.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
+				user.EmailConfirmed = row["EmailConfirmed"] == "True";
+			}
 
-            var rows = _database.Query(commandText, parameters);
-            if (rows != null && rows.Count == 1)
-            {
-                var row = rows[0];
-                user = (TUser)Activator.CreateInstance(typeof(TUser));
-                user.Id = row["Id"];
-                user.UserName = row["UserName"];
-                user.PasswordHash = string.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
-                user.SecurityStamp = string.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
-                user.Email = string.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
-                user.EmailConfirmed = row["EmailConfirmed"] == "True";
-            }
+			return user;
+		}
 
-            return user;
-        }
+		/// <summary>
+		/// Returns a list of TUser instances given a user name.
+		/// </summary>
+		/// <param name="userName">User's name.</param>
+		/// <returns></returns>
+		public IEnumerable<TUser> GetUserByName(String userName)
+		{
+			if (String.IsNullOrWhiteSpace(userName))
+				throw new ArgumentNullException(nameof(userName));
 
-        /// <summary>
-        /// Returns a list of TUser instances given a user name.
-        /// </summary>
-        /// <param name="userName">User's name.</param>
-        /// <returns></returns>
-        public List<TUser> GetUserByName(string userName)
-        {
-            //Due to PostgreSQL's case sensitivity, we have another column for the user name in lowercase.
-            if (userName != null)
-                userName = userName.ToLower();
+			//Due to PostgreSQL's case sensitivity, we have another column for the user name in lowercase.
+			userName = userName.ToLower();
 
-            List<TUser> users = new List<TUser>();
-            string commandText = "SELECT * FROM \"AspNetUsers\" WHERE LOWER(\"UserName\") = @name";
-            Dictionary<string, object> parameters = new Dictionary<string, object>() { { "@name", userName } };
+			var users = new List<TUser>();
+			var commandText = "SELECT * FROM \"AspNetUsers\" WHERE LOWER(\"UserName\") = @name";
+			var parameters = new Dictionary<String, Object>() { { "@name", userName } };
+			var rows = _database.Query(commandText, parameters);
+			foreach (var row in rows)
+			{
+				TUser user = new TUser();
+				user.Id = row["Id"];
+				user.UserName = row["UserName"];
+				user.PasswordHash = String.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
+				user.SecurityStamp = String.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
+				user.Email = String.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
+				user.EmailConfirmed = row["EmailConfirmed"] == "True";
+				users.Add(user);
+			}
 
-            var rows = _database.Query(commandText, parameters);
-            foreach(var row in rows)
-            {
-                TUser user = (TUser)Activator.CreateInstance(typeof(TUser));
-                user.Id = row["Id"];
-                user.UserName = row["UserName"];
-                user.PasswordHash = string.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
-                user.SecurityStamp = string.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
-                user.Email = string.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
-                user.EmailConfirmed = row["EmailConfirmed"] == "True";
-                users.Add(user);
-            }
+			return users;
+		}
 
-            return users;
-        }
+		/// <summary>
+		/// Returns a list of TUser instances given a user email.
+		/// </summary>
+		/// <param name="email">User's email address.</param>
+		/// <returns></returns>
+		public IEnumerable<TUser> GetUserByEmail(String email)
+		{
+			if (String.IsNullOrWhiteSpace(email))
+				throw new ArgumentNullException(nameof(email));
 
-        /// <summary>
-        /// Returns a list of TUser instances given a user email.
-        /// </summary>
-        /// <param name="email">User's email address.</param>
-        /// <returns></returns>
-        public List<TUser> GetUserByEmail(string email)
-        {
-            //Due to PostgreSQL's case sensitivity, we have another column for the user name in lowercase.
-            if (email != null)
-                email = email.ToLower();
+			//Due to PostgreSQL's case sensitivity, we have another column for the user name in lowercase.
+			email = email.ToLower();
 
-            List<TUser> users = new List<TUser>();
-            string commandText = "SELECT * FROM \"AspNetUsers\" WHERE LOWER(\"Email\") = @email";
-            Dictionary<string, object> parameters = new Dictionary<string, object>() { { "@email", email } };
+			var users = new List<TUser>();
+			var commandText = "SELECT * FROM \"AspNetUsers\" WHERE LOWER(\"Email\") = @email";
+			var parameters = new Dictionary<String, Object>() { { "@email", email } };
 
-            var rows = _database.Query(commandText, parameters);
-            foreach (var row in rows)
-            {
-                TUser user = (TUser)Activator.CreateInstance(typeof(TUser));
-                user.Id = row["Id"];
-                user.UserName = row["UserName"];
-                user.PasswordHash = string.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
-                user.SecurityStamp = string.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
-                user.Email = string.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
-                user.EmailConfirmed = row["EmailConfirmed"] == "True";
-                users.Add(user);
-            }
+			var rows = _database.Query(commandText, parameters);
+			foreach (var row in rows)
+			{
+				TUser user = new TUser();
+				user.Id = row["Id"];
+				user.UserName = row["UserName"];
+				user.PasswordHash = String.IsNullOrEmpty(row["PasswordHash"]) ? null : row["PasswordHash"];
+				user.SecurityStamp = String.IsNullOrEmpty(row["SecurityStamp"]) ? null : row["SecurityStamp"];
+				user.Email = String.IsNullOrEmpty(row["Email"]) ? null : row["Email"];
+				user.EmailConfirmed = row["EmailConfirmed"] == "True";
+				users.Add(user);
+			}
 
-            return users;
-        }
+			return users;
+		}
 
-        /// <summary>
-        /// Return the user's password hash.
-        /// </summary>
-        /// <param name="userId">The user's id.</param>
-        /// <returns></returns>
-        public string GetPasswordHash(string userId)
-        {
-            string commandText = "SELECT \"PasswordHash\" FROM \"AspNetUsers\" WHERE \"Id\" = @id";
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-            parameters.Add("@id", userId);
+		/// <summary>
+		/// Return the user's password hash.
+		/// </summary>
+		/// <param name="userId">The user's id.</param>
+		/// <returns></returns>
+		public String GetPasswordHash(String userId)
+		{
+			if (String.IsNullOrWhiteSpace(userId))
+				throw new ArgumentNullException(nameof(userId));
 
-            var passHash = _database.GetStrValue(commandText, parameters);
-            if(string.IsNullOrEmpty(passHash))
-            {
-                return null;
-            }
+			var commandText = "SELECT \"PasswordHash\" FROM \"AspNetUsers\" WHERE \"Id\" = @id";
+			var parameters = new Dictionary<String, Object>();
+			parameters.Add("@id", userId);
+			var passHash = _database.GetStrValue(commandText, parameters);
+			if (String.IsNullOrEmpty(passHash))
+			{
+				return null;
+			}
 
-            return passHash;
-        }
+			return passHash;
+		}
 
-        /// <summary>
-        /// Sets the user's password hash.
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <param name="passwordHash"></param>
-        /// <returns></returns>
-        public int SetPasswordHash(string userId, string passwordHash)
-        {
-            string commandText = "UPDATE \"AspNetUsers\" SET \"PasswordHash\" = @pwdHash WHERE \"Id\" = @id";
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-            parameters.Add("@pwdHash", passwordHash);
-            parameters.Add("@id", userId);
+		/// <summary>
+		/// Sets the user's password hash.
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <param name="passwordHash"></param>
+		/// <returns></returns>
+		public Int32 SetPasswordHash(String userId, String passwordHash)
+		{
+			if (String.IsNullOrWhiteSpace(userId))
+				throw new ArgumentNullException(nameof(userId));
 
-            return _database.Execute(commandText, parameters);
-        }
+			if (String.IsNullOrWhiteSpace(passwordHash))
+				throw new ArgumentNullException(nameof(passwordHash));
 
-        /// <summary>
-        /// Returns the user's security stamp.
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public string GetSecurityStamp(string userId)
-        {
-            string commandText = "SELECT \"SecurityStamp\" FROM \"AspNetUsers\" WHERE \"Id\" = @id";
-            Dictionary<string, object> parameters = new Dictionary<string, object>() { { "@id", userId } };
-            var result = _database.GetStrValue(commandText, parameters);
+			var commandText = "UPDATE \"AspNetUsers\" SET \"PasswordHash\" = @pwdHash WHERE \"Id\" = @id";
+			var parameters = new Dictionary<String, Object>();
+			parameters.Add("@pwdHash", passwordHash);
+			parameters.Add("@id", userId);
 
-            return result;
-        }
+			return _database.Execute(commandText, parameters);
+		}
 
-        /// <summary>
-        /// Inserts a new user in the AspNetUsers table.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public int Insert(TUser user)
-        {
-            var lowerCaseEmail = user.Email == null ? null : user.Email.ToLower();
+		/// <summary>
+		/// Returns the user's security stamp.
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <returns></returns>
+		public String GetSecurityStamp(String userId)
+		{
+			if (String.IsNullOrWhiteSpace(userId))
+				throw new ArgumentNullException(nameof(userId));
 
-            string commandText = @"
-            INSERT INTO ""AspNetUsers""(""Id"", ""UserName"", ""PasswordHash"", ""SecurityStamp"", ""Email"", 
-                                        ""EmailConfirmed"")
-            VALUES (@id, @name, @pwdHash, @SecStamp, @email, @emailconfirmed);";
+			var commandText = "SELECT \"SecurityStamp\" FROM \"AspNetUsers\" WHERE \"Id\" = @id";
+			var parameters = new Dictionary<String, Object>() { { "@id", userId } };
+			var result = _database.GetStrValue(commandText, parameters);
 
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-            parameters.Add("@name", user.UserName);
-            parameters.Add("@id", user.Id);
-            parameters.Add("@pwdHash", user.PasswordHash);
-            parameters.Add("@SecStamp", user.SecurityStamp);
-            parameters.Add("@email", user.Email);
-            parameters.Add("@emailconfirmed", user.EmailConfirmed);
+			return result;
+		}
 
-            return _database.Execute(commandText, parameters);
-        }
+		/// <summary>
+		/// Inserts a new user in the AspNetUsers table.
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public Int32 Insert(TUser user)
+		{
+			if (user == null)
+				throw new ArgumentNullException(nameof(user));
 
-        /// <summary>
-        /// Deletes a user from the AspNetUsers table.
-        /// </summary>
-        /// <param name="userId">The user's id.</param>
-        /// <returns></returns>
-        private int Delete(string userId)
-        {
-            string commandText = "DELETE FROM \"AspNetUsers\" WHERE \"Id\" = @userId";
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-            parameters.Add("@userId", userId);
+			var lowerCaseEmail = user.Email == null ? null : user.Email.ToLower();
 
-            return _database.Execute(commandText, parameters);
-        }
+			String commandText = @"
+				INSERT INTO ""AspNetUsers""(""Id"", ""UserName"", ""PasswordHash"", ""SecurityStamp"", ""Email"", ""EmailConfirmed"")
+				VALUES (@id, @name, @pwdHash, @SecStamp, @email, @emailconfirmed);";
 
-        /// <summary>
-        /// Deletes a user from the AspNetUsers table.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public int Delete(TUser user)
-        {
-            return Delete(user.Id);
-        }
+			var parameters = new Dictionary<String, Object>();
+			parameters.Add("@name", user.UserName);
+			parameters.Add("@id", user.Id);
+			parameters.Add("@pwdHash", user.PasswordHash);
+			parameters.Add("@SecStamp", user.SecurityStamp);
+			parameters.Add("@email", user.Email);
+			parameters.Add("@emailconfirmed", user.EmailConfirmed);
 
-        /// <summary>
-        /// Updates a user in the AspNetUsers table.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public int Update(TUser user)
-        {
-            var lowerCaseEmail = user.Email == null ? null : user.Email.ToLower();
+			return _database.Execute(commandText, parameters);
+		}
 
-//            string commandText = @"
-//                UPDATE ""AspNetUsers""
-//                   SET ""UserName"" = @userName, ""PasswordHash"" = @pswHash, ""SecurityStamp"" = @secStamp, ""Email""= @email, 
-//                       ""EmailConfirmed"" = @emailconfirmed
-//                 WHERE ""Id"" = @userId;";
+		/// <summary>
+		/// Deletes a user from the AspNetUsers table.
+		/// </summary>
+		/// <param name="userId">The user's id.</param>
+		/// <returns></returns>
+		private Int32 Delete(String userId)
+		{
+			if (String.IsNullOrWhiteSpace(userId))
+				throw new ArgumentNullException(nameof(userId));
 
-            string commandText = "UPDATE \"AspNetUsers\" SET \"UserName\" = @userName, \"PasswordHash\" = @pswHash, \"SecurityStamp\" = @secStamp, \"Email\"= @email, \"EmailConfirmed\" = @emailconfirmed WHERE \"Id\" = @userId;";
+			var commandText = "DELETE FROM \"AspNetUsers\" WHERE \"Id\" = @userId";
+			var parameters = new Dictionary<String, Object>();
+			parameters.Add("@userId", userId);
 
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-            parameters.Add("@userName", user.UserName);
-            parameters.Add("@pswHash", user.PasswordHash);
-            parameters.Add("@secStamp", user.SecurityStamp);
-            parameters.Add("@userId", user.Id);
-            parameters.Add("@email", user.Email);
-            parameters.Add("@emailconfirmed", user.EmailConfirmed);
+			return _database.Execute(commandText, parameters);
+		}
 
-            return _database.Execute(commandText, parameters);
-        }
-    }
+		/// <summary>
+		/// Deletes a user from the AspNetUsers table.
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public Int32 Delete(TUser user)
+		{
+			if (user == null)
+				throw new ArgumentNullException(nameof(user));
+
+			return Delete(user.Id);
+		}
+
+		/// <summary>
+		/// Updates a user in the AspNetUsers table.
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public Int32 Update(TUser user)
+		{
+			if (user == null)
+				throw new ArgumentNullException(nameof(user));
+
+			var lowerCaseEmail = user.Email == null ? null : user.Email.ToLower();
+			var commandText = "UPDATE \"AspNetUsers\" SET \"UserName\" = @userName, \"PasswordHash\" = @pswHash, \"SecurityStamp\" = @secStamp, \"Email\"= @email, \"EmailConfirmed\" = @emailconfirmed WHERE \"Id\" = @userId;";
+			var parameters = new Dictionary<String, Object>();
+			parameters.Add("@userName", user.UserName);
+			parameters.Add("@pswHash", user.PasswordHash);
+			parameters.Add("@secStamp", user.SecurityStamp);
+			parameters.Add("@userId", user.Id);
+			parameters.Add("@email", user.Email);
+			parameters.Add("@emailconfirmed", user.EmailConfirmed);
+
+			return _database.Execute(commandText, parameters);
+		}
+	}
 }
