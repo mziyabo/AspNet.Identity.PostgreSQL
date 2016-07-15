@@ -24,7 +24,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userId">The user's id.</param>
 		/// <returns></returns>
-		public List<String> FindByUserId(String userId)
+		public List<String> FindByUserId(Guid userId)
 		{
 			List<String> roles = new List<String>();
 
@@ -33,8 +33,7 @@ namespace AspNet.Identity.PostgreSQL
 			parameters.Add("@userId", userId);
 
 			var rows = _database.Query(commandText, parameters);
-			foreach (var row in rows)
-			{
+			foreach (var row in rows) {
 				roles.Add(row["Name"]);
 			}
 
@@ -46,7 +45,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userId">The user's id.</param>
 		/// <returns></returns>
-		public int Delete(String userId, String role)
+		public int Delete(Guid userId, String role)
 		{
 			String commandText = "DELETE FROM \"AspNetUserRoles\" WHERE \"UserId\" = @userId AND \"RoleId\" = @Role;";
 			Dictionary<String, Object> parameters = new Dictionary<String, Object>();
@@ -63,7 +62,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userId">The user's id.</param>
 		/// <returns></returns>
-		public int Delete(String userId)
+		public int Delete(Guid userId)
 		{
 			String commandText = "DELETE FROM \"AspNetUserRoles\" WHERE \"UserId\" = @userId";
 			Dictionary<String, Object> parameters = new Dictionary<String, Object>();

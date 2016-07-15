@@ -11,31 +11,21 @@ namespace AspNet.Identity.PostgreSQL
 	/// <summary>
 	/// Class that implements the key ASP.NET Identity user store interfaces
 	/// </summary>
-	public class UserStore : IUserLoginStore<IdentityUser>,
-					IUserClaimStore<IdentityUser>,
-					IUserRoleStore<IdentityUser>,
-					IUserPasswordStore<IdentityUser>,
-					IUserSecurityStampStore<IdentityUser>,
-					IQueryableUserStore<IdentityUser>,
-					IUserEmailStore<IdentityUser>,
-					IUserStore<IdentityUser>
+	public class UserStore : IUserLoginStore<IdentityUser, Guid>,
+					IUserClaimStore<IdentityUser, Guid>,
+					IUserRoleStore<IdentityUser, Guid>,
+					IUserPasswordStore<IdentityUser, Guid>,
+					IUserSecurityStampStore<IdentityUser, Guid>,
+					IQueryableUserStore<IdentityUser, Guid>,
+					IUserEmailStore<IdentityUser, Guid>,
+					IUserStore<IdentityUser, Guid>
 	{
-		private UserTable<IdentityUser> userTable;
-		private RoleTable roleTable;
-		private UserRolesTable userRolesTable;
-		private UserClaimsTable userClaimsTable;
-		private UserLoginsTable userLoginsTable;
-		private SqlDatabase database;
-
-		public IQueryable<IdentityUser> Users
-		{
-			get
-			{
-				//ToDo: Best performance
-				return userTable.GetAllUsers().AsQueryable();
-				//throw new NotImplementedException();
-			}
-		}
+		private readonly UserTable<IdentityUser> _userTable;
+		private readonly RoleTable _roleTable;
+		private readonly UserRolesTable _userRolesTable;
+		private readonly UserClaimsTable _userClaimsTable;
+		private readonly UserLoginsTable _userLoginsTable;
+		private SqlDatabase _database;
 
 		/// <summary>
 		/// Constructor that takes a PostgreSQLDatabase as argument.
@@ -43,12 +33,20 @@ namespace AspNet.Identity.PostgreSQL
 		/// <param name="connection"></param>
 		public UserStore(IDbConnection connection)
 		{
-			database = new SqlDatabase(connection);
-			userTable = new UserTable<IdentityUser>(database);
-			roleTable = new RoleTable(database);
-			userRolesTable = new UserRolesTable(database);
-			userClaimsTable = new UserClaimsTable(database);
-			userLoginsTable = new UserLoginsTable(database);
+			_database = new SqlDatabase(connection);
+			_userTable = new UserTable<IdentityUser>(_database);
+			_roleTable = new RoleTable(_database);
+			_userRolesTable = new UserRolesTable(_database);
+			_userClaimsTable = new UserClaimsTable(_database);
+			_userLoginsTable = new UserLoginsTable(_database);
+		}
+
+		public IQueryable<IdentityUser> Users {
+			get {
+				//ToDo: Best performance
+				return _userTable.GetAllUsers().AsQueryable();
+				//throw new NotImplementedException();
+			}
 		}
 
 		/// <summary>
@@ -58,12 +56,11 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task CreateAsync(IdentityUser user)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			userTable.Insert(user);
+			_userTable.Insert(user);
 
 			return Task.FromResult<Object>(null);
 		}
@@ -73,16 +70,10 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userId">The user's Id.</param>
 		/// <returns></returns>
-		public Task<IdentityUser> FindByIdAsync(String userId)
+		public Task<IdentityUser> FindByIdAsync(Guid userId)
 		{
-			if (String.IsNullOrEmpty(userId))
-			{
-				throw new ArgumentException("Null or empty argument: userId");
-			}
-
-			IdentityUser result = userTable.GetUserById(userId) as IdentityUser;
-			if (result != null)
-			{
+			var result = _userTable.GetUserById(userId) as IdentityUser;
+			if (result != null) {
 				return Task.FromResult<IdentityUser>(result);
 			}
 
@@ -96,21 +87,16 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<IdentityUser> FindByNameAsync(String userName)
 		{
-			if (String.IsNullOrEmpty(userName))
-			{
+			if (String.IsNullOrEmpty(userName)) {
 				throw new ArgumentException("Null or empty argument: userName");
 			}
 
-			List<IdentityUser> result = userTable.GetUserByName(userName) as List<IdentityUser>;
+			List<IdentityUser> result = _userTable.GetUserByName(userName) as List<IdentityUser>;
 
-			if (result != null)
-			{
-				if (result.Count == 1)
-				{
+			if (result != null) {
+				if (result.Count == 1) {
 					return Task.FromResult<IdentityUser>(result[0]);
-				}
-				else if (result.Count > 1)
-				{
+				} else if (result.Count > 1) {
 					//todo: exception for release mode?
 #if DEBUG
 					throw new ArgumentException("More than one user record returned.");
@@ -128,12 +114,11 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task UpdateAsync(IdentityUser user)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			userTable.Update(user);
+			_userTable.Update(user);
 
 			return Task.FromResult<Object>(null);
 		}
@@ -144,18 +129,6 @@ namespace AspNet.Identity.PostgreSQL
 			GC.SuppressFinalize(this);
 		}
 
-		protected virtual void Dispose(Boolean disposing)
-		{
-			if (disposing)
-			{
-				if (database != null)
-				{
-					database.Dispose();
-					database = null;
-				}
-			}
-		}
-
 		/// <summary>
 		/// Inserts a claim to the AspNetUserClaims table for the given user.
 		/// </summary>
@@ -164,17 +137,15 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task AddClaimAsync(IdentityUser user, Claim claim)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (claim == null)
-			{
+			if (claim == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			userClaimsTable.Insert(claim, user.Id);
+			_userClaimsTable.Insert(claim, user.Id);
 
 			return Task.FromResult<Object>(null);
 		}
@@ -186,7 +157,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<IList<Claim>> GetClaimsAsync(IdentityUser user)
 		{
-			ClaimsIdentity identity = userClaimsTable.FindByUserId(user.Id);
+			var identity = _userClaimsTable.FindByUserId(user.Id);
 
 			return Task.FromResult<IList<Claim>>(identity.Claims.ToList());
 		}
@@ -199,17 +170,15 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task RemoveClaimAsync(IdentityUser user, Claim claim)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (claim == null)
-			{
+			if (claim == null) {
 				throw new ArgumentNullException(nameof(claim));
 			}
 
-			userClaimsTable.Delete(user, claim);
+			_userClaimsTable.Delete(user, claim);
 
 			return Task.FromResult<Object>(null);
 		}
@@ -222,17 +191,15 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task AddLoginAsync(IdentityUser user, UserLoginInfo login)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (login == null)
-			{
+			if (login == null) {
 				throw new ArgumentNullException(nameof(login));
 			}
 
-			userLoginsTable.Insert(user, login);
+			_userLoginsTable.Insert(user, login);
 
 			return Task.FromResult<Object>(null);
 		}
@@ -244,17 +211,14 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<IdentityUser> FindAsync(UserLoginInfo login)
 		{
-			if (login == null)
-			{
+			if (login == null) {
 				throw new ArgumentNullException(nameof(login));
 			}
 
-			var userId = userLoginsTable.FindUserIdByLogin(login);
-			if (userId != null)
-			{
-				IdentityUser user = userTable.GetUserById(userId) as IdentityUser;
-				if (user != null)
-				{
+			var userId = _userLoginsTable.FindUserIdByLogin(login);
+			if (userId != null) {
+				IdentityUser user = _userTable.GetUserById(userId) as IdentityUser;
+				if (user != null) {
 					return Task.FromResult<IdentityUser>(user);
 				}
 			}
@@ -270,14 +234,12 @@ namespace AspNet.Identity.PostgreSQL
 		public Task<IList<UserLoginInfo>> GetLoginsAsync(IdentityUser user)
 		{
 			List<UserLoginInfo> userLogins = new List<UserLoginInfo>();
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			List<UserLoginInfo> logins = userLoginsTable.FindByUserId(user.Id);
-			if (logins != null)
-			{
+			List<UserLoginInfo> logins = _userLoginsTable.FindByUserId(user.Id);
+			if (logins != null) {
 				return Task.FromResult<IList<UserLoginInfo>>(logins);
 			}
 
@@ -292,17 +254,15 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task RemoveLoginAsync(IdentityUser user, UserLoginInfo login)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (login == null)
-			{
+			if (login == null) {
 				throw new ArgumentNullException(nameof(login));
 			}
 
-			userLoginsTable.Delete(user, login);
+			_userLoginsTable.Delete(user, login);
 
 			return Task.FromResult<Object>(null);
 		}
@@ -315,20 +275,17 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task AddToRoleAsync(IdentityUser user, String roleName)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (String.IsNullOrEmpty(roleName))
-			{
+			if (String.IsNullOrEmpty(roleName)) {
 				throw new ArgumentException("Argument cannot be null or empty: roleName.");
 			}
 
-			String roleId = roleTable.GetRoleId(roleName);
-			if (!String.IsNullOrEmpty(roleId))
-			{
-				userRolesTable.Insert(user, roleId);
+			String roleId = _roleTable.GetRoleId(roleName);
+			if (!String.IsNullOrEmpty(roleId)) {
+				_userRolesTable.Insert(user, roleId);
 			}
 
 			return Task.FromResult<Object>(null);
@@ -341,15 +298,13 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<IList<String>> GetRolesAsync(IdentityUser user)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			List<String> roles = userRolesTable.FindByUserId(user.Id);
+			List<String> roles = _userRolesTable.FindByUserId(user.Id);
 			{
-				if (roles != null)
-				{
+				if (roles != null) {
 					return Task.FromResult<IList<String>>(roles);
 				}
 			}
@@ -365,20 +320,17 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<bool> IsInRoleAsync(IdentityUser user, String role)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (String.IsNullOrEmpty(role))
-			{
+			if (String.IsNullOrEmpty(role)) {
 				throw new ArgumentNullException(nameof(role));
 			}
 
-			List<String> roles = userRolesTable.FindByUserId(user.Id);
+			List<String> roles = _userRolesTable.FindByUserId(user.Id);
 			{
-				if (roles != null && roles.Contains(role))
-				{
+				if (roles != null && roles.Contains(role)) {
 					return Task.FromResult<bool>(true);
 				}
 			}
@@ -396,20 +348,17 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task RemoveFromRoleAsync(IdentityUser user, String role)
 		{
-			if (user == null)
-			{
+			if (user == null) {
 				throw new ArgumentNullException(nameof(user));
 			}
 
-			if (role == null)
-			{
+			if (role == null) {
 				throw new ArgumentNullException(nameof(role));
 			}
 
-			String roleId = roleTable.GetRoleId(role);
-			if (!String.IsNullOrEmpty(roleId))
-			{
-				userRolesTable.Delete(user.Id, roleId);
+			String roleId = _roleTable.GetRoleId(role);
+			if (!String.IsNullOrEmpty(roleId)) {
+				_userRolesTable.Delete(user.Id, roleId);
 			}
 
 			return Task.FromResult<Object>(null);
@@ -422,9 +371,8 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task DeleteAsync(IdentityUser user)
 		{
-			if (user != null)
-			{
-				userTable.Delete(user);
+			if (user != null) {
+				_userTable.Delete(user);
 			}
 
 			return Task.FromResult<Object>(null);
@@ -437,7 +385,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<String> GetPasswordHashAsync(IdentityUser user)
 		{
-			String passwordHash = userTable.GetPasswordHash(user.Id);
+			String passwordHash = _userTable.GetPasswordHash(user.Id);
 
 			return Task.FromResult<String>(passwordHash);
 		}
@@ -449,7 +397,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<bool> HasPasswordAsync(IdentityUser user)
 		{
-			var hasPassword = !String.IsNullOrEmpty(userTable.GetPasswordHash(user.Id));
+			var hasPassword = !String.IsNullOrEmpty(_userTable.GetPasswordHash(user.Id));
 
 			return Task.FromResult<bool>(Boolean.Parse(hasPassword.ToString()));
 		}
@@ -499,7 +447,7 @@ namespace AspNet.Identity.PostgreSQL
 		public Task SetEmailAsync(IdentityUser user, String email)
 		{
 			user.Email = email;
-			userTable.Update(user);
+			_userTable.Update(user);
 
 			return Task.FromResult(0);
 		}
@@ -533,7 +481,7 @@ namespace AspNet.Identity.PostgreSQL
 		public Task SetEmailConfirmedAsync(IdentityUser user, bool confirmed)
 		{
 			user.EmailConfirmed = confirmed;
-			userTable.Update(user);
+			_userTable.Update(user);
 
 			return Task.FromResult(0);
 		}
@@ -545,18 +493,26 @@ namespace AspNet.Identity.PostgreSQL
 		/// <returns></returns>
 		public Task<IdentityUser> FindByEmailAsync(String email)
 		{
-			if (String.IsNullOrEmpty(email))
-			{
+			if (String.IsNullOrEmpty(email)) {
 				throw new ArgumentNullException(nameof(email));
 			}
 
-			List<IdentityUser> result = userTable.GetUserByEmail(email) as List<IdentityUser>;
-			if (result != null && result.Count > 0)
-			{
+			List<IdentityUser> result = _userTable.GetUserByEmail(email) as List<IdentityUser>;
+			if (result != null && result.Count > 0) {
 				return Task.FromResult<IdentityUser>(result[0]);
 			}
 
 			return Task.FromResult<IdentityUser>(null);
+		}
+
+		protected virtual void Dispose(Boolean disposing)
+		{
+			if (disposing) {
+				if (_database != null) {
+					_database.Dispose();
+					_database = null;
+				}
+			}
 		}
 	}
 }

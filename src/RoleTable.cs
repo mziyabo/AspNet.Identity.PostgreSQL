@@ -79,7 +79,7 @@ namespace AspNet.Identity.PostgreSQL
 			Dictionary<String, Object> parameters = new Dictionary<String, Object>();
 			parameters.Add("@id", roleId);
 
-			return _database.GetStrValue(commandText, parameters);
+			return _database.GetString(commandText, parameters);
 		}
 
 		/// <summary>

@@ -42,7 +42,7 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userId">The user's id.</param>
 		/// <returns></returns>
-		public int Delete(String userId)
+		public int Delete(Guid userId)
 		{
 			String commandText = "DELETE FROM \"AspNetUserLogins\" WHERE \"UserId\" = @userId";
 			Dictionary<String, Object> parameters = new Dictionary<String, Object>();
@@ -73,14 +73,14 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userLogin">The user's login info.</param>
 		/// <returns></returns>
-		public String FindUserIdByLogin(UserLoginInfo userLogin)
+		public Guid FindUserIdByLogin(UserLoginInfo userLogin)
 		{
-			String commandText = "SELECT \"UserId\" FROM \"AspNetUserLogins\" WHERE \"LoginProvider\" = @loginProvider AND \"ProviderKey\" = @providerKey";
-			Dictionary<String, Object> parameters = new Dictionary<String, Object>();
+			const String commandText = "SELECT \"UserId\" FROM \"AspNetUserLogins\" WHERE \"LoginProvider\" = @loginProvider AND \"ProviderKey\" = @providerKey";
+			var parameters = new Dictionary<String, Object>();
 			parameters.Add("loginProvider", userLogin.LoginProvider);
 			parameters.Add("providerKey", userLogin.ProviderKey);
 
-			return _database.GetStrValue(commandText, parameters);
+			return _database.GetGuid(commandText, parameters);
 		}
 
 		/// <summary>
@@ -88,15 +88,14 @@ namespace AspNet.Identity.PostgreSQL
 		/// </summary>
 		/// <param name="userId">The user's id.</param>
 		/// <returns></returns>
-		public List<UserLoginInfo> FindByUserId(String userId)
+		public List<UserLoginInfo> FindByUserId(Guid userId)
 		{
 			List<UserLoginInfo> logins = new List<UserLoginInfo>();
 			String commandText = "SELECT * FROM \"AspNetUserLogins\" WHERE \"UserId\" = @userId";
 			Dictionary<String, Object> parameters = new Dictionary<String, Object>() { { "@userId", userId } };
 
 			var rows = _database.Query(commandText, parameters);
-			foreach (var row in rows)
-			{
+			foreach (var row in rows) {
 				var login = new UserLoginInfo(row["LoginProvider"], row["ProviderKey"]);
 				logins.Add(login);
 			}

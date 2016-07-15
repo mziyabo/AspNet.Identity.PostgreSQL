@@ -31,19 +31,16 @@ namespace AspNet.Identity.PostgreSQL
 		{
 			int result = 0;
 
-			if (String.IsNullOrEmpty(commandText))
-			{
+			if (String.IsNullOrEmpty(commandText)) {
 				throw new ArgumentException("Command text cannot be null or empty.");
 			}
 
-			try
-			{
+			try {
 				OpenConnection();
 				var command = CreateCommand(commandText, parameters);
 				result = command.ExecuteNonQuery();
 			}
-			finally
-			{
+			finally {
 				_connection.Close();
 			}
 
@@ -60,19 +57,16 @@ namespace AspNet.Identity.PostgreSQL
 		{
 			Object result = null;
 
-			if (String.IsNullOrEmpty(commandText))
-			{
+			if (String.IsNullOrEmpty(commandText)) {
 				throw new ArgumentException("Command text cannot be null or empty.");
 			}
 
-			try
-			{
+			try {
 				OpenConnection();
 				var command = CreateCommand(commandText, parameters);
 				result = command.ExecuteScalar();
 			}
-			finally
-			{
+			finally {
 				CloseConnection();
 			}
 
@@ -88,23 +82,18 @@ namespace AspNet.Identity.PostgreSQL
 		public IList<IDictionary<String, String>> Query(String commandText, Dictionary<String, Object> parameters)
 		{
 			IList<IDictionary<String, String>> rows = null;
-			if (String.IsNullOrEmpty(commandText))
-			{
+			if (String.IsNullOrEmpty(commandText)) {
 				throw new ArgumentException("Command text cannot be null or empty.");
 			}
 
-			try
-			{
+			try {
 				OpenConnection();
 				var command = CreateCommand(commandText, parameters);
-				using (var reader = command.ExecuteReader())
-				{
+				using (var reader = command.ExecuteReader()) {
 					rows = new List<IDictionary<String, String>>();
-					while (reader.Read())
-					{
+					while (reader.Read()) {
 						var row = new Dictionary<String, String>();
-						for (var i = 0; i < reader.FieldCount; i++)
-						{
+						for (var i = 0; i < reader.FieldCount; i++) {
 							var columnName = reader.GetName(i);
 							var columnValue = reader.IsDBNull(i) ? null : reader.GetValue(i).ToString();
 							row.Add(columnName, columnValue);
@@ -113,12 +102,79 @@ namespace AspNet.Identity.PostgreSQL
 					}
 				}
 			}
-			finally
-			{
+			finally {
 				CloseConnection();
 			}
 
 			return rows;
+		}
+
+		/// <summary>
+		/// Helper method to return query a String value.
+		/// </summary>
+		/// <param name="commandText">The PostgreSQL query to execute.</param>
+		/// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
+		/// <returns>The String value resulting from the query.</returns>
+		public String GetString(String commandText, Dictionary<String, Object> parameters)
+		{
+			return QueryValue(commandText, parameters) as String;
+		}
+
+		/// <summary>
+		/// Helper method to return query a String value.
+		/// </summary>
+		/// <param name="commandText">The PostgreSQL query to execute.</param>
+		/// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
+		/// <returns>The String value resulting from the query.</returns>
+		public Guid GetGuid(String commandText, Dictionary<String, Object> parameters)
+		{
+			return (Guid)QueryValue(commandText, parameters);
+		}
+
+		/// <summary>
+		/// Closes the connection if it is open.
+		/// </summary>
+		public void CloseConnection()
+		{
+			if (_connection.State == ConnectionState.Open) {
+				_connection.Close();
+			}
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			// Don't need GC.SuppressFinalize(this); because this class does not have a Finalizer/Destructor.
+		}
+
+		protected virtual void Dispose(Boolean disposing)
+		{
+			if (disposing) {
+				if (_connection != null) {
+					CloseConnection();
+					_connection.Dispose();
+					_connection = null;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Adds the parameters to a PostgreSQL command.
+		/// </summary>
+		/// <param name="command">The NpgsqlCommand command to execute.</param>
+		/// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
+		private static void AddParameters(IDbCommand command, Dictionary<String, Object> parameters)
+		{
+			if (parameters == null) {
+				return;
+			}
+
+			foreach (var param in parameters) {
+				var parameter = command.CreateParameter();
+				parameter.ParameterName = param.Key;
+				parameter.Value = param.Value ?? DBNull.Value;
+				command.Parameters.Add(parameter);
+			}
 		}
 
 		/// <summary>
@@ -137,84 +193,19 @@ namespace AspNet.Identity.PostgreSQL
 		}
 
 		/// <summary>
-		/// Adds the parameters to a PostgreSQL command.
-		/// </summary>
-		/// <param name="command">The NpgsqlCommand command to execute.</param>
-		/// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
-		private static void AddParameters(IDbCommand command, Dictionary<String, Object> parameters)
-		{
-			if (parameters == null)
-			{
-				return;
-			}
-
-			foreach (var param in parameters)
-			{
-				var parameter = command.CreateParameter();
-				parameter.ParameterName = param.Key;
-				parameter.Value = param.Value ?? DBNull.Value;
-				command.Parameters.Add(parameter);
-			}
-		}
-
-		/// <summary>
-		/// Helper method to return query a String value.
-		/// </summary>
-		/// <param name="commandText">The PostgreSQL query to execute.</param>
-		/// <param name="parameters">Parameters to pass to the PostgreSQL query.</param>
-		/// <returns>The String value resulting from the query.</returns>
-		public String GetStrValue(String commandText, Dictionary<String, Object> parameters)
-		{
-			String value = QueryValue(commandText, parameters) as String;
-			return value;
-		}
-
-		/// <summary>
 		/// Opens a connection if not open.
 		/// </summary>
 		private void OpenConnection()
 		{
 			var retries = 10;
-			if (_connection.State == ConnectionState.Open)
-			{
+			if (_connection.State == ConnectionState.Open) {
 				return;
 			}
 
-			while (retries >= 0 && _connection.State != ConnectionState.Open)
-			{
+			while (retries >= 0 && _connection.State != ConnectionState.Open) {
 				_connection.Open();
 				retries--;
 				Thread.Sleep(50);
-			}
-		}
-
-		/// <summary>
-		/// Closes the connection if it is open.
-		/// </summary>
-		public void CloseConnection()
-		{
-			if (_connection.State == ConnectionState.Open)
-			{
-				_connection.Close();
-			}
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			// Don't need GC.SuppressFinalize(this); because this class does not have a Finalizer/Destructor.
-		}
-
-		protected virtual void Dispose(Boolean disposing)
-		{
-			if (disposing)
-			{
-				if (_connection != null)
-				{
-					CloseConnection();
-					_connection.Dispose();
-					_connection = null;
-				}
 			}
 		}
 	}
