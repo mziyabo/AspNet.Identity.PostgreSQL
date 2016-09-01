@@ -14,9 +14,9 @@ To use this Identity provider in the default ASP.NET MVC5 template project, foll
 
         using Microsoft.AspNet.Identity.EntityFramework;
 
-with:
+    with:
 
-    using AspNet.Identity.PostgreSQL;
+        using AspNet.Identity.PostgreSQL;
     
 3. In IdentityModel.cs, set `ApplicationDbContext` to derive from `SqlDatabase`.
 4. Ensure that your web.config has the PostgreSQL connection string included in `DefaultConnection`. If your PostgreSQL database is located in a different schema, make sure you specify the schema name, because this Identity provider is going to assume a public schema otherwise. If you do not know what this means, then do not be concerned because then your schema is likely just public.
