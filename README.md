@@ -12,7 +12,7 @@ To use this Identity provider in the default ASP.NET MVC5 template project, foll
 1. Add the AspNet.Identity.PostgreSQL project as reference to your main MVC project.
 2. In your MVC project, replace all references to: 
 
-    using Microsoft.AspNet.Identity.EntityFramework;
+        using Microsoft.AspNet.Identity.EntityFramework;
 
 with:
 
